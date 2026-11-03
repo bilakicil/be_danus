@@ -1,58 +1,69 @@
-import { dbPool } from "../../config/db.js";
+import { dbPool } from "../config/db.js";
 
-export const registerUser = async (request, response) => {
+export const register = async (req, res) => {
+  const { email, password, nama_lengkap } = req.body;
+
+  // Validasi input sederhana
+  if (!email || !password || !nama_lengkap) {
+    return res.status(400).json({
+      success: false,
+      message: "Email, password, dan nama lengkap wajib diisi!",
+    });
+  }
+
   try {
-    const { email, password, nama_lengkap } = request.body;
+    // 1. Cek apakah email sudah terdaftar
+    const [existingUser] = await dbPool.query(
+      "SELECT id FROM users WHERE email = ?",
+      [email],
+    );
 
-    // 1. Insert ke tabel users (tanpa menyertakan id)
+    if (existingUser.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Email sudah terdaftar!",
+      });
+    }
+
+    // 2. Insert ke tabel users
     const [userResult] = await dbPool.query(
       "INSERT INTO users (email, password_hash) VALUES (?, ?)",
       [email, password],
     );
 
-    // 2. Ambil ID otomatis (auto-increment) yang baru saja terbuat
     const newUserId = userResult.insertId;
 
-    // 3. Insert ke tabel profil menggunakan ID dari user tersebut
-    await dbPool.query("INSERT INTO profil (id, nama_lengkap) VALUES (?, ?)", [
-      newUserId,
-      nama_lengkap,
-    ]);
+    // 3. Insert ke tabel profil
+    await dbPool.query(
+      "INSERT INTO profil (pengguna_id, nama_lengkap) VALUES (?, ?)",
+      [newUserId, nama_lengkap],
+    );
 
-    return response.status(201).json({
+    return res.status(201).json({
       success: true,
-      message: "Berhasil registrasi!",
+      message: "Registrasi berhasil!",
+      data: {
+        user_id: newUserId,
+        email,
+        nama_lengkap,
+      },
     });
   } catch (error) {
-    console.log(error);
-    return response
-      .status(500)
-      .json({ message: "Terjadi kesalahan pada server" });
-  }
-};
+    // CONSOLE ERROR UNTUK VERCEL LOGS
+    console.error("=== ERROR DETAIL REGISTRASI ===");
+    console.error("Message:", error.message);
+    console.error("Code:", error.code);
+    console.error("SQL Message:", error.sqlMessage);
+    console.error("Stack:", error.stack);
+    console.error("=================================");
 
-export const loginUser = async (request, response) => {
-  try {
-    const { email, password } = request.body;
-    const [rows] = await dbPool.query("SELECT * FROM users WHERE email = ?", [
-      email,
-    ]);
-
-    if (rows.length === 0 || rows[0].password_hash !== password) {
-      return response
-        .status(401)
-        .json({ success: false, message: "Email atau password salah" });
-    }
-
-    return response.status(200).json({
-      success: true,
-      message: "Berhasil login!",
-      data: rows[0],
+    // KIRIM DETAL ERROR KE POSTMAN
+    return res.status(500).json({
+      success: false,
+      message: "Terjadi kesalahan server saat registrasi",
+      error: error.message,
+      sqlMessage: error.sqlMessage || null,
+      code: error.code || null,
     });
-  } catch (error) {
-    console.log(error);
-    return response
-      .status(500)
-      .json({ message: "Terjadi kesalahan pada server" });
   }
 };
