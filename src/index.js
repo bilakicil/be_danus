@@ -14,6 +14,12 @@ app.use(express.json());
 app.use("/api/auth", authRoute);
 app.use("/api", resepRoute);
 
-app.listen(PORT, () => {
-  console.log(`Server berjalan di http://localhost:${PORT}`);
-});
+
+if (process.env.NODE_ENV !== "production") {
+  app.listen(PORT, () => {
+    console.log(`Server berjalan di http://localhost:${PORT}`);
+  });
+}
+
+// WAJIB Ditambahkan untuk Vercel
+export default app;
