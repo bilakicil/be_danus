@@ -34,10 +34,10 @@ export const register = async (req, res) => {
     const newUserId = userResult.insertId;
 
     // 3. Insert ke tabel profil
-    await dbPool.query(
-      "INSERT INTO profil (pengguna_id, nama_lengkap) VALUES (?, ?)",
-      [newUserId, nama_lengkap],
-    );
+   await dbPool.query(
+     "INSERT INTO profil (pengguna_id, nama_lengkap) VALUES (?, ?)",
+     [newUserId, nama_lengkap],
+   );
 
     return res.status(201).json({
       success: true,
