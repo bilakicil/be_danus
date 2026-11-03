@@ -6,7 +6,12 @@ export const getAllResep = async (request, response) => {
     const [rows] = await dbPool.query("SELECT * FROM resep");
     return response.status(200).json({ success: true, data: rows });
   } catch (error) {
-    return response.status(500).json({ message: "Terjadi kesalahan server" });
+    // Tampilkan pesan error ASLI dari database / node
+    return response.status(500).json({
+      success: false,
+      message: error.message,
+      code: error.code,
+    });
   }
 };
 
