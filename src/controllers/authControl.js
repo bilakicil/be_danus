@@ -1,5 +1,4 @@
-import { dbPool } from "../config/db.js";
-
+import { dbPool } from "../../config/db.js";
 // 1. Controller LOGIN
 export const loginUser = async (req, res) => {
   const { email, password } = req.body;
